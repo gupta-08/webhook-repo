@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 
-# ── secrets ───────────────────────────────────────────────────────
+# secrets 
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 client    = MongoClient(MONGO_URI)
@@ -14,12 +14,12 @@ collection = db["events"]
 
 app = Flask(__name__)
 
-# ── home ──────────────────────────────────────────────────────────
+# home
 @app.route("/")
 def home():
     return render_template("index.html")
 
-# ── webhook receiver ──────────────────────────────────────────────
+# webhook receiver 
 @app.route("/webhook", methods=["POST"])
 def webhook():
     data     = request.json
@@ -71,33 +71,29 @@ def webhook():
 
     return "OK", 200
 
-# ── API for frontend ──────────────────────────────────────────────
+#  API for frontend 
 @app.route("/events", methods=["GET"])
 def get_events():
-    """Return latest events; optional ?from=YYYY-MM-DD filter is
-       interpreted in whatever zone the frontend is *showing*:
-       • IST when tzToggle unchecked
-       • UTC when tzToggle checked
+    date_from  = request.args.get("from")
+    act_filter = request.args.get("action") 
+    query      = {}
 
-       Frontend sends full ISO  UTC string, so we just compare UTC.
-    """
-    date_from = request.args.get("from")           # full ISO or none
-    query     = {}
+    if act_filter:
+        query["action"] = act_filter
 
     if date_from:
         try:
-            # date_from already in ISO *UTC* (frontend builds it)
             dt_from = datetime.fromisoformat(date_from)
             query["timestamp"] = {"$gte": dt_from.isoformat()}
         except ValueError:
-            pass   # bad format → ignore filter
+            pass
 
-    events = (collection.find(query)
-                        .sort("timestamp", -1)
-                        .limit(100))
-    events = [{**ev, "_id": str(ev["_id"])} for ev in events]
+    events = list(collection.find(query).sort("timestamp", -1).limit(100))
+    for ev in events:
+        ev["_id"] = str(ev["_id"])
     return jsonify(events)
 
-# ── entrypoint ────────────────────────────────────────────────────
+
+#  entrypoint 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
