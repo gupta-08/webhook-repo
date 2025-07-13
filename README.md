@@ -4,14 +4,8 @@ A lightweight Flask app that listens to GitHub Webhooks for `push`, `pull_reques
 The frontend displays the latest activity in real-time with filtering by date, time zone, and action type.
 ## Frontend UI
 <img width="1773" height="947" alt="image" src="https://github.com/user-attachments/assets/4c474fd9-771f-4338-a545-c029ba89cb7a" />
- ## Expose localhost
- ```bash
-npm install -g localtunnel
-# then:
-lt --port 5000
-```
-## ✨ Features
 
+## ✨ Features
 - Receives GitHub Webhooks for:
   - ✅ Push
   - ✅ Pull Request (Opened)
@@ -29,8 +23,7 @@ lt --port 5000
 - MongoDB Atlas
 - GitHub Webhooks
 - LocalTunnel (for exposing localhost)
-- 
-
+  
 ## 📁 Folder Structure
 ```
 webhook-repo/
@@ -87,5 +80,10 @@ lt --port 5000
 Create a `.env` file in root with:
 MONGO_URI=your-mongodb-uri
 Make sure `.env` is listed in `.gitignore` to keep it secret.
-
+## Expose localhost
+ ```bash
+npm install -g localtunnel
+# then:
+lt --port 5000
+```
 
