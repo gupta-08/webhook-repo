@@ -2,6 +2,9 @@
 
 A lightweight Flask app that listens to GitHub Webhooks for `push`, `pull_request`, and `merge` events and stores them in MongoDB.  
 The frontend displays the latest activity in real-time with filtering by date, time zone, and action type.
+###Frontend UI
+<img width="1773" height="947" alt="image" src="https://github.com/user-attachments/assets/4c474fd9-771f-4338-a545-c029ba89cb7a" />
+
 ## ✨ Features
 
 - Receives GitHub Webhooks for:
