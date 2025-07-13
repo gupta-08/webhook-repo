@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>GitHub Activity Feed</title>
+  <style>
+    :root {
+      --bg: #f4f6fa;
+      --text: #2d3436;
+      --card: #ffffff;
+      --shadow: rgba(0,0,0,0.08);
+      --primary: #6366f1;
+      --accent: #e0e7ff;
+      --font: system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0 24px;
+    }
+
+    header {
+      background: linear-gradient(90deg, #4f46e5, #6366f1);
+      color: white;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    #events {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-width: 700px;
+      margin-inline: auto;
+    }
+
+    .event {
+      background: var(--card);
+      padding: 18px 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 12px var(--shadow);
+      display: flex;
+      flex-direction: column;
+      border-left: 6px solid var(--primary);
+    }
+
+    .event.push     { border-color: #00b894; } 
+    .event.pull     { border-color: #0984e3; }  
+    .event.merge    { border-color: #fdcb6e; } 
+
+    .event .text {
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .event .timestamp {
+      margin-top: 6px;
+      font-size: 0.9rem;
+      color: #636e72;
+    }
+
+    .branch {
+      font-family: monospace;
+      background: var(--accent);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    .author {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    #empty {
+      text-align: center;
+      color: #888;
+      border: 2px dashed #ccc;
+      padding: 32px;
+      border-radius: 12px;
+      margin-top: 40px;
+      max-width: 600px;
+      margin-inline: auto;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🚀 GitHub Activity Feed</h1>
+
+  <!-- Time‑zone toggle -->
+  <label style="display:flex;align-items:center;gap:8px;margin:12px 0;">
+    <input type="checkbox" id="tzToggle">
+    <span id="tzLabel">Show times in IST</span>
+  </label>
+  <!-- Date filter -->
+  <div style="margin-bottom:20px;">
+    <label>
+      From:
+      <input type="date" id="dateFilter">
+    </label>
+  </div>
+</header>
+  <div id="events"></div>
+
+  <script>
+  // cache dom nodes 
+  const box      = document.getElementById("events");
+  const toggle   = document.getElementById("tzToggle");
+  const tzLabel  = document.getElementById("tzLabel");
+  const dateInput = document.getElementById("dateFilter");
+
+  //load saved preference (default IST)
+  const savedTZ  = localStorage.getItem("tz") || "IST";
+  toggle.checked = savedTZ === "UTC";                 // checked → UTC
+  tzLabel.textContent = toggle.checked ? "Show times in UTC"
+                                       : "Show times in IST";
+
+  // tiny helper to format timestamp in chosen zone 
+  function fmt(iso) {
+    const useUTC = toggle.checked;
+    const opts = { dateStyle:"medium", timeStyle:"short",
+                   timeZone: useUTC ? "UTC" : "Asia/Kolkata" };
+    const label = useUTC ? "UTC" : "IST";
+    return new Date(iso).toLocaleString("en-IN", opts) + " " + label;
+  }
+
+  // build a card’s HTML
+  function render(ev) {
+    const dt = fmt(ev.timestamp);
+    let icon = "📦", type="push", text="";
+
+    if (ev.event_type === "push" || ev.action === "PUSH") {
+      icon="📦"; type="push";
+      text = `<span class="author">${ev.author}</span> pushed to
+              <span class="branch">${ev.to_branch}</span>`;
+    } else if (ev.event_type === "pull_request" || ev.action === "PULL_REQUEST") {
+      icon="🛠️"; type="pull";
+      text = `<span class="author">${ev.author}</span> opened a pull request
+              from <span class="branch">${ev.from_branch}</span> to
+              <span class="branch">${ev.to_branch}</span>`;
+    } else if (ev.event_type === "merge" || ev.action === "MERGE") {
+      icon="🔀"; type="merge";
+      text = `<span class="author">${ev.author}</span> merged
+              <span class="branch">${ev.from_branch}</span> into
+              <span class="branch">${ev.to_branch}</span>`;
+    }
+
+    return `
+      <div class="event ${type}">
+        <div class="text">${icon} ${text}</div>
+        <div class="timestamp">📅 ${dt}</div>
+      </div>`;
+  }
+
+  //fetch + draw events
+  async function load() {
+    try {
+      const res  = await fetch("/events" + buildFromParam());
+      const data = await res.json();
+      box.innerHTML = "";
+
+      if (data.length === 0) {
+        box.innerHTML = `<div id="empty">No events yet — push, PR, or merge to see them here.</div>`;
+        return;
+      }
+      data.forEach(ev => box.insertAdjacentHTML("beforeend", render(ev)));
+    } catch (err) {
+      console.error("Error fetching events:", err);
+    }
+  }
+
+  //handle toggle click
+  dateInput.addEventListener("change", load);  
+  toggle.addEventListener("change", () => {
+    localStorage.setItem("tz", toggle.checked ? "UTC" : "IST");
+    tzLabel.textContent = toggle.checked ? "Show times in UTC" : "Show times in IST";
+    load();                        
+  });
+  function buildFromParam() {
+  if (!dateInput.value) return "";
+
+  const [y, m, d] = dateInput.value.split("-").map(Number);
+  const showUTC   = toggle.checked;
+
+  // If "Show times in UTC"  → start at 00:00 UTC
+  if (showUTC) {
+    const utcMidnight = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+    return `?from=${utcMidnight.toISOString()}`;
+  }
+
+  // If "Show times in IST"  → start at 00:00 IST (UTC+5:30)
+  // Build UTC equivalent by subtracting 5h30m (19 800 000 ms)
+  const istLocal = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+  const utcCut   = new Date(istLocal.getTime() - 19800_000);
+  return `?from=${utcCut.toISOString()}`;
+}
+  // initial load + polling every 15 s 
+  load();
+  setInterval(load, 15000);
+</script>
+</body>
+</html>
