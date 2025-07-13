@@ -109,6 +109,18 @@
       <input type="date" id="dateFilter">
     </label>
   </div>
+  <!-- Action selector -->
+<div style="margin-bottom: 20px;">
+  <label>
+    Action:
+    <select id="actionFilter">
+      <option value="">All</option>
+      <option value="PUSH">Push</option>
+      <option value="PULL_REQUEST">Pull Request</option>
+      <option value="MERGE">Merge</option>
+    </select>
+  </label>
+</div>
 </header>
   <div id="events"></div>
 
@@ -118,6 +130,7 @@
   const toggle   = document.getElementById("tzToggle");
   const tzLabel  = document.getElementById("tzLabel");
   const dateInput = document.getElementById("dateFilter");
+  const actionSel = document.getElementById("actionFilter");
 
   //load saved preference (default IST)
   const savedTZ  = localStorage.getItem("tz") || "IST";
@@ -165,7 +178,9 @@
   //fetch + draw events
   async function load() {
     try {
-      const res  = await fetch("/events" + buildFromParam());
+      const act = actionSel.value ? `&action=${actionSel.value}` : "";
+      const res = await fetch("/events" + buildFromParam() + act);
+
       const data = await res.json();
       box.innerHTML = "";
 
@@ -180,7 +195,8 @@
   }
 
   //handle toggle click
-  dateInput.addEventListener("change", load);  
+  dateInput.addEventListener("change", load); 
+  actionSel.addEventListener("change", load); 
   toggle.addEventListener("change", () => {
     localStorage.setItem("tz", toggle.checked ? "UTC" : "IST");
     tzLabel.textContent = toggle.checked ? "Show times in UTC" : "Show times in IST";
