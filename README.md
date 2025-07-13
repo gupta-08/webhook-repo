@@ -22,7 +22,9 @@ The frontend displays the latest activity in real-time with filtering by date, t
 - GitHub Webhooks
 - LocalTunnel (for exposing localhost)
 - 
+
 ## 📁 Folder Structure
+```
 webhook-repo/
 ├── templates/
 │ └── index.html
@@ -31,7 +33,7 @@ webhook-repo/
 ├── requirements.txt # Python dependencies
 ├── README.md
 ## 🚀 Getting Started
-
+```
 1. **Clone the repository**
 ```bash
 git clone https://github.com/yourusername/webhook-repo.git
